@@ -4,8 +4,8 @@ from text_procesing import load_data, nltk_tokenize, token_spans
 
 
 def main():
-    path_ita = "datasets/absita/trial.txt" 
-    path_eng = "datasets/aclImdb/neg/10000_4.txt"
+    path_ita = "datasets/trial.txt" 
+    path_eng = "datasets/10000_4.txt"
 
     # Load data from files
     print("\n\nENGLISH")
