@@ -8,6 +8,8 @@ __pycache__/
 #mac
 *.DS_Store
 
+#data
+*text8
 # Distribution / packaging
 .Python
 build/
