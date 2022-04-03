@@ -1,2 +1,12 @@
 nltk
 tokenizers
+tqdm
+torch
+torchvision
+re
+os
+collections
+time
+sklearn
+seaborn
+matplotlib
