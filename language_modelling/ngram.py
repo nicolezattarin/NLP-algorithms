@@ -15,7 +15,7 @@ class NGrams():
     >>> # compute probability of a word given a context
     >>> ngram.probability('the', 'a') # probability of 'the' given 'a'
     """
-    
+
     def __init__(self, corpus, n):
         """
         args:
@@ -24,20 +24,20 @@ class NGrams():
         """
         self.corpus = corpus
         self.n = n
-        self.tokenization()
-        self.get_words_list() 
-        self.ngram_generation()
+
+        self._tokenization() # tokenize the corpus
+        self.get_words_list() # get a list of words from the corpus
+        self._preprocessing() # generate ngrams from the corpus with 
         self.trained = False
 
-    def tokenization (self):
+    def _tokenization (self):
         """
         Tokenize the corpus.
         """
-        try: # Use the default NLTK tokenizer.
+        try: 
             from nltk import word_tokenize, sent_tokenize 
-            # Testing whether it works. 
-            word_tokenize(sent_tokenize("This is a foobar sentence. Yes it is.")[0])
-        except: # Use a naive sentence tokenizer and toktok.
+            word_tokenize(sent_tokenize(self.corpus)[0])
+        except: 
             import re
             from nltk.tokenize import ToktokTokenizer
             # See https://stackoverflow.com/a/25736515/610569
@@ -46,7 +46,7 @@ class NGrams():
             word_tokenize = word_tokenize = toktok.tokenize
 
         self.tokenized_text = [list(map(str.lower, word_tokenize(sent))) 
-                  for sent in sent_tokenize(self.corpus)]
+                            for sent in sent_tokenize(self.corpus)]
 
     def get_words_list(self):
         """
@@ -55,7 +55,7 @@ class NGrams():
         self.words_list = self.corpus.split()
         return self.words_list 
 
-    def ngram_generation(self):
+    def _preprocessing(self):
         """
         Generate ngrams from a corpus.
         """
