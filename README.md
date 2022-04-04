@@ -13,7 +13,7 @@ The repository is divided into different folders, each of which contains the alg
 ## Overview
 ### Tokenization
 The tokenization is the first step of the preprocessing, it is the process of breaking the text into a sequence of tokens. It is indeed a very important step in any NLP model, since it allows to clean up the corpus and make it easier for any other algorithm to learn from it.
-In [tokenization](https://github.com/nicolezattarin/Natural-Language-Processing-algorithms/tree/main/tokenization) we exemplifies the use of several packages from the Natural Language Toolkit (NLTK) and provide function to have a fast access to those methods.
+In [tokenization](https://github.com/nicolezattarin/NLP-algorithms/tree/main/tokenization) we exemplifies the use of several packages from the Natural Language Toolkit (NLTK) and provide function to have a fast access to those methods.
 
 ### Embedding
 In order to deal wirth words in any NLP model, we need to embed them into a vector space. We provide an interface that implements s particular type of model called Word2Vec, which uses NN to find vector representations of words on the basis of their semantic meaning.
@@ -25,3 +25,8 @@ An example of possible results from training follows (trained with 500 epochs on
   <img src="embedding/skipgram_loss.png" width="400" />
 </p>
  
+### Language Modelling
+Language modeling is the task of predicting which word comes next in a sequence of words, these models can be seen as generative models that assign probability to a piece of text. A classical, in the sense that it does not relie on NN, but still interesting model is represented NGram model. The idea idea behind the Ngram model is to approximate the probability of a word by conditioning only on the past N-1 words.
+In [language_modelling](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling] we provide an interface to train and test a classical language model: NGram model. 
+
+For instance, given a word and a context, it is possible to extract the probability to observe such word in the context, moreover it is possible to generate a fixed length sequence of words.
