@@ -27,6 +27,6 @@ An example of possible results from training follows (trained with 500 epochs on
  
 ### Language Modelling
 Language modeling is the task of predicting which word comes next in a sequence of words, these models can be seen as generative models that assign probability to a piece of text. A classical, in the sense that it does not relie on NN, but still interesting model is represented NGram model. The idea idea behind the Ngram model is to approximate the probability of a word by conditioning only on the past N-1 words.
-In [language_modelling](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling] we provide an interface to train and test a classical language model: NGram model. 
+In [language_modelling](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling) we provide an interface to train and test a classical language model: NGram model. 
 
 For instance, given a word and a context, it is possible to extract the probability to observe such word in the context, moreover it is possible to generate a fixed length sequence of words.
