@@ -1,4 +1,12 @@
+"""
+This code is a rearrangement of the code from the following repository:
+     https://github.com/udacity/deep-learning-v2-pytorch/tree/master/word2vec-embeddings
 
+We rearranged the code in a class to perform an automatic preprocessing of the text
+and to provide an easy interface to the skipgram model.
+Moreover, we added functions for accessing the embeddings, the loss history 
+and visualizing the embeddings.
+"""
 
 import torch
 from torch import nn
@@ -6,6 +14,13 @@ import torch.optim as optim
 
 class SkipGramNeg(nn.Module):
     def __init__(self, n_vocab, n_embed, noise_dist=None, device='cpu'):
+        """
+        Args:
+            n_vocab: Number of words in the vocabulary.
+            n_embed: Number of dimensions to embed into.
+            noise_dist: (Optional) A distribution over words to use as noise.
+            device: Device to use for computation. Use 'cpu' for cpu and 'cuda' for gpu.
+        """
         super().__init__()
         
         self.n_vocab = n_vocab
@@ -17,6 +32,7 @@ class SkipGramNeg(nn.Module):
         self.in_embed = nn.Embedding(n_vocab, n_embed)
         self.out_embed = nn.Embedding(n_vocab, n_embed)
         
+        # initialize the embedding weights uniformly
         self.in_embed.weight.data.uniform_(-1, 1)
         self.out_embed.weight.data.uniform_(-1, 1)
         
@@ -29,7 +45,9 @@ class SkipGramNeg(nn.Module):
         return output_vectors
     
     def forward_noise(self, batch_size, n_samples):
-        """ Generate noise vectors with shape (batch_size, n_samples, n_embed)"""
+        """ 
+        Generate noise vectors with shape (batch_size, n_samples, n_embed)
+        """
         if self.noise_dist is None:
             noise_dist = torch.ones(self.n_vocab)
         else:
@@ -41,8 +59,8 @@ class SkipGramNeg(nn.Module):
                                         replacement=True)
         noise_words = noise_words.to(self.device)
         
+        #.view(): tensor with the same data as the self tensor but of a different shape.
         noise_vectors = self.out_embed(noise_words).view(batch_size, n_samples, self.n_embed)
-        
         return noise_vectors
 
 class NegativeSamplingLoss(nn.Module):
@@ -50,17 +68,24 @@ class NegativeSamplingLoss(nn.Module):
         super().__init__()
 
     def forward(self, input_vectors, output_vectors, noise_vectors):
+        """
+        Forward pass of the model.
+        args:
+            input_vectors: tensor of shape (batch_size, dim_embed)
+            output_vectors: tensor of shape (batch_size, dim_embed)
+            noise_vectors: tensor of shape (batch_size, n_samples, dim_embed)
+        """
+        #reshaping
+        batch_size, dim_embed = input_vectors.shape
+        input_vectors = input_vectors.view(batch_size, dim_embed, 1)
+        output_vectors = output_vectors.view(batch_size, 1, dim_embed)
         
-        batch_size, embed_size = input_vectors.shape
-        input_vectors = input_vectors.view(batch_size, embed_size, 1)
-        output_vectors = output_vectors.view(batch_size, 1, embed_size)
-        
+        # compute the scores: batch matrix-matrix product +sigmoid + log
         out_loss = torch.bmm(output_vectors, input_vectors).sigmoid().log()
         out_loss = out_loss.squeeze()
         
         noise_loss = torch.bmm(noise_vectors.neg(), input_vectors).sigmoid().log()
         noise_loss = noise_loss.squeeze().sum(1)  # sum the losses over the sample of noise vectors
-
         return -(out_loss + noise_loss).mean()
 
 
@@ -89,14 +114,20 @@ class SkipGram():
         
 
     def cosine_similarity(self, embedding, valid_size=16, valid_window=100, device='cpu'):
-        """ Returns the cosine similarity of validation words with words in the embedding matrix.
-            Here, embedding should be a PyTorch embedding module.
+        """ 
+        Returns the cosine similarity of validation words with words in the embedding matrix.
+        Here, embedding should be a PyTorch embedding module.
+        args:
+            embedding: embedding module
+            valid_size: number of validation words to consider
+            valid_window: number of words to consider left and right of the target
+            device: device to run the model on, default is cpu, but can be set to cuda
         """
         
         # sim = (a . b) / |a||b|
         import numpy as np
         import random
-        embed_vectors = embedding.weight
+        embed_vectors = embedding.weight #get the embedding matrix from the embedding module
         
         # magnitude of embedding vectors, |b|
         magnitudes = embed_vectors.pow(2).sum(dim=1).sqrt().unsqueeze(0)
@@ -107,9 +138,11 @@ class SkipGram():
                                 random.sample(range(1000,1000+valid_window), valid_size//2))
         valid_examples = torch.LongTensor(valid_examples).to(device)
         
+        # compute embedding
         valid_vectors = embedding(valid_examples)
+        # compute cosine similarity
         similarities = torch.mm(valid_vectors, embed_vectors.t())/magnitudes
-            
+        
         return valid_examples, similarities
 
     def _window(self, words, idx, window_size=5):
@@ -156,8 +189,9 @@ class SkipGram():
         """
         Preprocesses the corpus by converting it to a list of integers
         and removing words that are not in the embedding matrix.
+        args:
+            corpus: text corpus
         """
-
         from preprocess import Preprocess
         import numpy as np
         pp = Preprocess()
@@ -168,8 +202,6 @@ class SkipGram():
         word_freqs = np.array(sorted(freqs.values(), reverse=True))
         unigram_dist = word_freqs/word_freqs.sum()
         self.noise_dist = torch.from_numpy(unigram_dist**(0.75)/np.sum(unigram_dist**(0.75)))
-
-
 
     def train(self,  n_epochs=10, batch_size=512, n_samples=5, verbose=False, print_every=100, window_size=5):
         """
