@@ -14,12 +14,13 @@ def main():
     from skipgram import SkipGram
 
     # load the corpus from the text file
-    with open('test.txt') as f:
+    data = 'test.txt'
+    with open(data) as f:
         text = f.read()
 
     # create the model and train it
-    model = SkipGram(text, dim_embed=100, lr=0.1)
-    model.train(n_epochs=1000, batch_size=100, n_samples=5)
+    model = SkipGram(text, dim_embed=200, lr=0.001)
+    model.train(n_epochs=200, batch_size=500, n_samples=5, verbose=True)
 
     # gets the history of the loss during training
     history = model.history_loss()
