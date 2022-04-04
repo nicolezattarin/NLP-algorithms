@@ -21,7 +21,7 @@ In particular, we rearranged the code available [here](https://github.com/udacit
 
 An example of possible results from training follows (trained with 500 epochs on the test corpus provided):
 <p float="center">
-  <img src="embedding/embeddings.png" width="400" />
+  <img src="embedding/embeddings.png" width="300" />
   <img src="embedding/skipgram_loss.png" width="400" />
 </p>
  
