@@ -1,4 +1,4 @@
-nltk
+nltk==3.4
 tokenizers
 tqdm
 torch
@@ -10,3 +10,7 @@ time
 sklearn
 seaborn
 matplotlib
+dill
+request 
+io
+dill
