@@ -26,7 +26,12 @@ An example of possible results from training follows (trained with 500 epochs on
 </p>
  
 ### Language Modelling
-Language modeling is the task of predicting which word comes next in a sequence of words, these models can be seen as generative models that assign probability to a piece of text. A classical, in the sense that it does not relie on NN, but still interesting model is represented NGram model. The idea idea behind the Ngram model is to approximate the probability of a word by conditioning only on the past N-1 words.
-In [language_modelling](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling) we provide an interface to train and test a classical language model: NGram model. 
+Language modeling is the task of predicting which word comes next in a sequence of words, these models can be seen as generative models that assign probability to a piece of text. 
+#### Ngram model 
+A classical, in the sense that it does not relie on NN, but still interesting model is represented NGram model. The idea idea behind the Ngram model is to approximate the probability of a word by conditioning only on the past N-1 words.
+In [ngram](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling/ngram) we provide an interface to train and test a classical language model: NGram model. 
+
+#### Neural Language Model
+A neural language model is a generative model that uses a sequence of words as input to predict the following word. We provide a class that implements a neural language model based on a feed forward NN. See [neural_language_model](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling/neural_language_models) for more details.
 
 
