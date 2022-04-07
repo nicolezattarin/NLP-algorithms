@@ -294,5 +294,3 @@ class FFNeuralModel():
             hotvects.append(hot_vect)
             output = self.model([hotvects])
         return self.int_to_vocab[np.argmax(output.detach().numpy())]
-        
-        
