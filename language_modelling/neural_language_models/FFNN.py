@@ -15,6 +15,11 @@ import torch.utils.data as torchdata
 
 class preprocessing():
     def __init__(self, corpus):
+        """
+        Initialize the preprocessing class
+        args:
+            corpus: a string of text
+        """
         self.corpus = corpus
         self.clean_corpus = self._preprocess(corpus)
         self._tokenization(self.clean_corpus) # tokenize the corpus
@@ -31,12 +36,9 @@ class preprocessing():
         
         self.tokenized_text = word_tokenize(corpus)
     
-    def _preprocess(self, text, cutoff=5):
+    def _preprocess(self, text):
         """
-        Preprocess text for word2vec, replace punctuation with tokens so we can use them in our model
-        args:
-            text: str
-            cutoff: int (default: 5) - remove words that appear less than cutoff times
+        Preprocess, replace punctuation with tokens so we can use them in our model
         """
 
         # Replace punctuation with tokens so we can use them in our model
@@ -79,17 +81,21 @@ class preprocessing():
         Create a hot vector representation of the corpus
         args:
             words: a list of words from the vocabulary
+            vocab_to_int: dictionary that maps each word in the vocabulary to an integer (e.g. {'the':0})
         returns:
             hot_vect_corpus: a list of hot vectors, one hot vector for each word in the corpus
         """
         hot_vect_corpus = []
         for w in words:
             hot_vect = np.zeros(len(vocab_to_int))
-            hot_vect[self.vocab_to_int[w]] = 1
+            hot_vect[vocab_to_int[w]] = 1
             hot_vect_corpus.append(hot_vect)
         return hot_vect_corpus
 
     def get_hot_vect_corpus(self):
+        """
+        Return the hot vector representation of the corpus
+        """
         return self.HotVecCorpus
 
     def vocab_dimension(self):
@@ -106,11 +112,22 @@ class preprocessing():
         return self.clean_corpus
     
     def get_tokenized(self):
+        """
+        Return the tokenized corpus
+        """
         return self.tokenized_text
 
 
 class FFNN(nn.Module):
     def __init__(self, vocab_size, embedding_dim, hidden_dim, window_size=1):
+        """
+        Initialize the FFNN model
+        args:
+            vocab_size: the size of the vocabulary
+            embedding_dim: the dimension of the embedding layer
+            hidden_dim: the dimension of the hidden layer
+            window_size: the size of the window to observe the context of the word
+        """
         super().__init__()
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
@@ -122,13 +139,16 @@ class FFNN(nn.Module):
         self.lin2 = nn.Linear(hidden_dim, vocab_size)
         self.softmax = nn.Softmax(dim=0)
     
-    def forward(self, *w):
-        # w is a list of words, as many as the window
-        if self.window_size > 1:
-            e = [self.embedding(torch.tensor(np.nonzero(w[i])[0][0]).long()) for i in range(len(w))]
-            e = torch.cat(e, dim=-1)
-        else:
-            e = self.embedding(w)
+    def forward(self, w):
+        """
+        Forward pass of the model
+        args:
+            w: list of hot vectors, one hot vector for each word in the window
+        returns:
+            out: the output of the model
+        """
+        e = [self.embedding(torch.tensor(np.nonzero(w[i])[0][0]).long()) for i in range(len(w))]
+        e = torch.cat(e, dim=-1)
 
         h = self.lin1(e)
         h = self.activation(h)
@@ -137,64 +157,142 @@ class FFNN(nn.Module):
         return y
     
 class FFNeuralModel():
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, window_size=3, lr=1e-2):
-        self.model = FFNN(vocab_size, embedding_dim, hidden_dim, window_size=window_size)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
+    def __init__(self, embedding_dim, hidden_dim, window_size=1):
+        """
+        Initialize the FFNN model
+        args:
+            embedding_dim: the dimension of the embedding layer
+            hidden_dim: the dimension of the hidden layer
+            window_size: the size of the window to observe the context of the word
+        """
+        if embedding_dim < 1: raise ValueError('embedding_dim must be greater than 0')
+        if hidden_dim < 1: raise ValueError('hidden_dim must be greater than 0')
+        if window_size < 1: raise ValueError('window_size must be greater than 0')
+        if not isinstance(embedding_dim, int): raise TypeError('embedding_dim must be an integer')
+        if not isinstance(hidden_dim, int): raise TypeError('hidden_dim must be an integer')
+        if not isinstance(window_size, int): raise TypeError('window_size must be an integer')
+
+        self.embedding_dim = embedding_dim
+        self.hidden_dim = hidden_dim
         self.loss_function = nn.CrossEntropyLoss()
         self.trained = False
         self.window_size = window_size
-        print('Model initialized')
-
 
     def save_model(self, path):
+        """
+        Save the model
+        args:
+            path: the path to save the model
+        """
         torch.save(self.model.state_dict(), path)
     
-    def _prepare_data(self, words):
+    def _prepare_data(self, corpus):
         """
         prepare data for training
         """
+        self.pp = preprocessing(corpus)
+        self.onehotwords = self.pp.get_hot_vect_corpus()
+        self.vocab_dim = self.pp.vocab_dimension()
+        self.vocab_to_int, self.int_to_vocab = self.pp.vocab_to_int, self.pp.int_to_vocab
+
+        # cretae data and labels
         datatrain = []
         labels = []
-        for i in range(len(words)-self.window_size):
-            datatrain.append([words[i:i+self.window_size]])
-            labels.append(words[i+self.window_size])
+        for i in range(len(self.onehotwords)-self.window_size):
+            datatrain.append([self.onehotwords[i:i+self.window_size]])
+            labels.append(self.onehotwords[i+self.window_size])
         print('Data prepared')
-        return datatrain, labels
+        self.datatrain = datatrain
+        self.labels = labels
     
-    def train(self, words, n_epochs=10, verbose=True, print_every=100):
+    def train(self, corpus, n_epochs=3, 
+                    verbose=True, print_every=100, 
+                    lr=1e-3, momentum=0.9, 
+                    save=True, save_path='model.pt'):
         """
         args:
-            words: list of words from the vocabulary as 1hot vectors
-            n_epochs: int (default: 10) - number of epochs to train for
-            verbose: bool (default: True) - whether to print progress
-            print_every: int (default: 10) - how often to print progress
+            corpus: the corpus to train the model on
+            n_epochs: the number of epochs to train the model
+            verbose: whether to print the loss after each epoch
+            print_every: the number of epochs to wait before printing the loss
+            lr: the learning rate
+            momentum: the momentum parameter for SGD
+            save: whether to save the model
+            save_path: the path to save the model
         """
         from tqdm import tqdm
         self.history = []
 
         # send the model to GPU or CPU
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        words, labels = self._prepare_data(words)
 
+        # prepare data
+        self._prepare_data(corpus)
+
+        # create model
+        self.model = FFNN(self.vocab_dim, self.embedding_dim, self.hidden_dim, self.window_size)
+        print('Model initialized')
+        print('Window size: ', self.window_size)
+        print('Vocab size: ', self.vocab_dim)
+        print('Embedding dimension: ', self.embedding_dim)
+        print('Hidden dimension: ', self.hidden_dim)
+        self.model.to(device)
+        print('Model sent to device')
+
+        # optimizer
+        self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
+
+        # train
         if verbose: iterable = range(n_epochs)
         else: iterable = tqdm(range(n_epochs), desc = "Training in progress")
         nsteps = 0
         for e in iterable:
             if verbose: print('Epoch {}'.format(e+1))
+            running_loss = 0.0
             # get our input, target batches
-            for w, l in zip(words, labels):
+            for w, l in zip(self.datatrain, self.labels):
                 l = torch.tensor([np.nonzero(l)[0][0]]).long()
                 self.optimizer.zero_grad()
-                output = self.model(*w[0])
+                output = self.model(w[0])
                 copy_output = output.clone().tolist()
                 loss = self.loss_function(torch.tensor([copy_output]).float(), l)
                 loss.requires_grad = True
                 loss.backward()
                 self.optimizer.step()
                 nsteps += 1
-                if nsteps % print_every == 0:
-                    self.history.append(loss.item())
-                    if verbose:
-                        print(f"Loss: {loss.item()}")
+                running_loss += loss.item()
+                if nsteps % print_every == 0:   
+                    print(f"loss: {loss.item():.3f}")
+                    running_loss = 0.0
             print("\n")
+            self.history.append(loss.item())
         self.trained = True
+        print('Training finished')
+        # save model
+        if save:self.save_model(save_path)
+
+    def loss_history(self):
+        """
+        return the loss history
+        """
+        if self.trained: return self.history
+        else: raise Exception('Model not trained')
+
+    def predict(self, sentence):
+        """
+        args:
+            sentence: string of words
+        """
+        if not self.trained: raise Exception('Model not trained')
+        # debug: up to now we support only words which are in the vocabulary
+        # get hot vector
+        words = sentence.split(' ')
+        hotvects = []
+        for w in words:
+            hot_vect = np.zeros(len(self.vocab_to_int))
+            hot_vect[self.vocab_to_int[w]] = 1
+            hotvects.append(hot_vect)
+            output = self.model([hotvects])
+        return self.int_to_vocab[np.argmax(output.detach().numpy())]
+        
+        

@@ -88,9 +88,6 @@ class NegativeSamplingLoss(nn.Module):
         noise_loss = noise_loss.squeeze().sum(1)  # sum the losses over the sample of noise vectors
         return -(out_loss + noise_loss).mean()
 
-
-
-
 class SkipGram():
     def __init__(self, corpus, dim_embed, noise_distribution=None, device="cpu", lr=0.001):
         """
