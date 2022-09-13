@@ -34,4 +34,5 @@ In [ngram](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_m
 #### Neural Language Model
 A neural language model is a generative model that uses a sequence of words as input to predict the following word. We provide a class that implements a neural language model based on a feed forward NN. See [neural_language_model](https://github.com/nicolezattarin/NLP-algorithms/tree/main/language_modelling/neural_language_models) for more details.
 
+Note: there is an issue in the training to fix
 
